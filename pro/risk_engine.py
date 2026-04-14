@@ -38,6 +38,12 @@ def log_event(username, event_type, status, request):
 
 def is_new_ip(username, ip):
     """Check if this IP has been used before by this user"""
+    try:
+        if ipaddress.ip_address(ip).is_private:
+            return False
+    except ValueError:
+        pass
+    
     previous = AuditLog.query.filter_by(
         user_id=username, status='success'
     ).filter(AuditLog.ip_address != ip).first()
@@ -50,8 +56,16 @@ def is_new_ip(username, ip):
     return previous is not None and any_previous is None
 
 
-def multiple_ips_detected(username, window_minutes=10):
+def multiple_ips_detected(username, window_minutes=10, request=None):
     """Check if multiple IPs used in the last N minutes"""
+    if request:
+        ip = get_client_ip(request)
+        try:
+            if ipaddress.ip_address(ip).is_private:
+                return False
+        except ValueError:
+            pass
+            
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=window_minutes)
     recent_logs = AuditLog.query.filter(
         AuditLog.user_id == username,
@@ -107,7 +121,7 @@ def calculate_risk(username, event, request):
     if is_new_ip(username, ip):
         risk += 10
 
-    if multiple_ips_detected(username):
+    if multiple_ips_detected(username, request=request):
         risk += 15
 
     if excessive_view_full(username):
