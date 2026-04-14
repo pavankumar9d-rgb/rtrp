@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <style>
+        .blurred-text {
+            filter: blur(4px);
+            user-select: none;
+        }
+
+        .btn-step-up {
+            background-color: #f0ad4e;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            font-size: 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .btn-step-up:hover {
+            background-color: #ec971f;
+        }
+
+        .blur-all td:not(.no-blur) {
+            filter: blur(4px);
+            user-select: none;
+        }
+
+        .blur-all th:not(.no-blur) {
+            filter: blur(4px);
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container">
+        <header class="main-header" style="position: relative; height: 100px; background: transparent;">
+            <!-- Blank banner for VBIT Header -->
+        </header>
+
+        <div class="dashboard-sub-header">
+            <div class="user-info">Hi...{{ student.name }}</div>
+            <div class="actions">
+                <!-- Check session remaining time if full access is enabled -->
+                {% if display.full_access %}
+                <span id="session-timer" style="color: #d9534f; margin-right: 15px; font-weight:bold;">Secure Session:
+                    2:00</span>
+                {% endif %}
+                <a href="{{ url_for('change_password') }}" class="sidebar-link"
+                    style="margin-left: 0; padding: 0; display: inline; color: inherit; font-size: inherit; font-weight: inherit; background: transparent;">Change
+                    Password</a>
+                <a href="{{ url_for('logout') }}"
+                    style="margin-left: 15px; color: #0033cc; text-decoration: none;">Logout</a>
+            </div>
+        </div>
+
+        <div class="dashboard-wrapper">
+            <aside class="sidebar">
+                <div class="sidebar-header">MENU</div>
+                <nav>
+                    <ul class="sidebar-menu">
+                        <li class="sidebar-item"><a href="#" class="sidebar-link"
+                                data-target="academic_register">ACADEMIC REGISTER</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="calendar">ACADEMIC
+                                CALENDER</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="assignments">ASSIGNMENTS
+                                REPORT</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link"
+                                data-target="attendance">ATTENDANCE</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="backlogs">BACKLOGS</a>
+                        </li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="book_search">BOOK
+                                SEARCH</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="change_mobile">CHANGE
+                                MOBILE.NO / E-MAIL</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="class_assignments">CLASS
+                                ASSIGNMENTS</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="complaint">COMPLAINT /
+                                SUGGESTION</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link"
+                                data-target="exam_schedule">EXAM-SCHEDULE</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="fee_details">FEE
+                                DETAILS</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="fee_dues">FEE DUES</a>
+                        </li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="feedback">FEEDBACK</a>
+                        </li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="library">LIBRARY
+                                BOOKS</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="marks">MARKS</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link active"
+                                data-target="profile">PROFILE</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="project_search">PROJECT
+                                SEARCH</a></li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="resources">RESOURCES</a>
+                        </li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="timetable">TIME TABLE</a>
+                        </li>
+                        <li class="sidebar-item"><a href="#" class="sidebar-link" data-target="topics">TOPICS
+                                COVERED</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="main-content" id="mainContentArea">
+                <h2 class="content-title">STUDENT PROFILE</h2>
+                <div class="accordion-container">
+                    <button class="accordion-item"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">BIO-DATA</button>
+                    <div id="bioDataContent" class="accordion-content" style="display:none;">
+                        <table class="data-table bio-table {% if not display.full_access %}blur-all{% endif %}"
+                            style="font-size: 11px;">
+                            <tr style="background: #e9eff7; font-weight: bold;">
+                                <td colspan="4">Personal Details</td>
+                            </tr>
+                            <tr>
+                                <td>Admission.No</td>
+                                <td>: {{ student.admission_no }}</td>
+                                <td rowspan="8" colspan="2" class="no-blur"
+                                    style="text-align: center; vertical-align: top;">
+                                    <div
+                                        style="width: 100px; height: 120px; background: #eee; margin: 0 auto; border: 1px solid #ccc; overflow: hidden; filter: none;">
+                                        <!-- Image goes here --></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RollNo</td>
+                                <td>: {{ student.student_id }}</td>
+                            </tr>
+                            <tr>
+                                <td>Name</td>
+                                <td>: {{ student.name }}</td>
+                            </tr>
+                            <tr>
+                                <td>Course</td>
+                                <td>: {{ student.course }}</td>
+                            </tr>
+                            <tr>
+                                <td>Branch</td>
+                                <td>: {{ student.branch }}</td>
+                            </tr>
+                            <tr>
+                                <td>Semester</td>
+                                <td>: {{ student.semester }}</td>
+                            </tr>
+                            <tr>
+                                <td>DOB</td>
+                                <td>: {{ student.dob }}</td>
+                            </tr>
+                            <tr>
+                                <td>Gender</td>
+                                <td>: {{ student.gender }}</td>
+                            </tr>
+
+                            <tr>
+                                <td>Aadhaar</td>
+                                <td>: <span class="{% if not display.full_access %}blurred-text{% endif %}">{{
+                                        display.aadhaar }}</span></td>
+                                <td>Nationality</td>
+                                <td>: {{ student.nationality }}</td>
+                            </tr>
+                            <tr>
+                                <td>Religion</td>
+                                <td>: {{ student.religion }}</td>
+                                <td>Caste</td>
+                                <td>: {{ student.caste }}</td>
+                            </tr>
+                            <tr>
+                                <td>Entrance Type</td>
+                                <td>: {{ student.entrance_type }}</td>
+                                <td>Rank</td>
+                                <td>: {{ student.entrance_rank }}</td>
+                            </tr>
+                            <tr>
+                                <td>Seat Type</td>
+                                <td>: {{ student.seat_type }}</td>
+                                <td>Joining Date</td>
+                                <td>: {{ student.joining_date }}</td>
+                            </tr>
+                            <tr>
+                                <td>Phone</td>
+                                <td>: <span class="{% if not display.full_access %}blurred-text{% endif %}">{{
+                                        display.phone }}</span></td>
+                                <td>Email</td>
+                                <td style="font-size: 10px;">: <span
+                                        class="{% if not display.full_access %}blurred-text{% endif %}">{{ display.email
+                                        }}</span></td>
+                            </tr>
+
+                            <tr style="background: #e9eff7; font-weight: bold;">
+                                <td colspan="4">Parent's Details</td>
+                            </tr>
+                            <tr>
+                                <td>Father Name</td>
+                                <td>: {{ student.father_name }}</td>
+                                <td>Occupation</td>
+                                <td>: {{ student.father_occupation }}</td>
+                            </tr>
+                            <tr>
+                                <td>Mother Name</td>
+                                <td>: {{ student.mother_name }}</td>
+                                <td>Occupation</td>
+                                <td>: {{ student.mother_occupation }}</td>
+                            </tr>
+                            <tr>
+                                <td>Annual Income</td>
+                                <td>: {{ student.annual_income }}</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Father Mobile</td>
+                                <td>: <span class="{% if not display.full_access %}blurred-text{% endif %}">{{
+                                        student.father_mobile if display.full_access else 'XXXXXXXXXX' }}</span></td>
+                                <td>Mother Mobile</td>
+                                <td>: <span class="{% if not display.full_access %}blurred-text{% endif %}">{{
+                                        student.mother_mobile if display.full_access else 'XXXXXXXXXX' }}</span></td>
+                            </tr>
+                        </table>
+
+                        {% if not display.full_access %}
+                        <div style="margin-top: 15px; text-align: center;">
+                            <button class="btn-action"
+                                onclick='window.location.href="{{ url_for("step_up") }}";'>Authenticate to View Full
+                                Details</button>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <button class="accordion-item"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">PERFORMANCE
+                        (Present)</button>
+                    <div style="display:none;" class="accordion-content">
+                        <h4 style="margin-top: 0; color: #0274d8; font-size: 13px;">ATTENDANCE</h4>
+                        <table class="data-table" style="font-size: 11px;">
+                            <thead>
+                                <tr>
+                                    <th>Sl.No.</th>
+                                    <th>Subject</th>
+                                    <th>Held</th>
+                                    <th>Attend</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>DM</td>
+                                    <td>34</td>
+                                    <td>23</td>
+                                    <td>67.65</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>BEFA</td>
+                                    <td>23</td>
+                                    <td>15</td>
+                                    <td>65.22</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>OS</td>
+                                    <td>51</td>
+                                    <td>31</td>
+                                    <td>60.78</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>CN</td>
+                                    <td>25</td>
+                                    <td>17</td>
+                                    <td>68.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button class="accordion-item"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">PERFORMANCE
+                        (Past)</button>
+                    <div style="display:none;" class="accordion-content">
+                        <div style="text-align: center; font-weight: bold; background: #eee; padding: 5px;">CGPA: 7.77
+                            Credits: 60/60</div>
+                    </div>
+
+                    <button class="accordion-item"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Fee
+                        Details</button>
+                    <div style="display:none;" class="accordion-content">
+                        <table class="data-table" style="font-size: 10px;">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Payable</th>
+                                    <th>Paid</th>
+                                    <th>Due</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1st Year</td>
+                                    <td>128,800.00</td>
+                                    <td>128,800.00</td>
+                                    <td>0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>2nd Year</td>
+                                    <td>124,550.00</td>
+                                    <td>39,550.00</td>
+                                    <td>85,000.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button class="accordion-item"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Backlogs</button>
+                    <div
+                        style="display:none; padding: 10px; border: 1px solid #6fb6f1; margin-bottom: 5px; font-size: 12px; color: #0033cc;">
+                        Student have no backlogs</div>
+
+                    <button class="accordion-item"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Outings</button>
+                    <div
+                        style="display:none; padding: 10px; border: 1px solid #6fb6f1; margin-bottom: 5px; font-size: 12px;">
+                        No outing records found.</div>
+
+                    <button class="accordion-item"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">Counseling
+                        Details</button>
+                    <div
+                        style="display:none; padding: 10px; border: 1px solid #6fb6f1; margin-bottom: 5px; font-size: 12px;">
+                        No counseling sessions recorded.</div>
+
+                    <button class="accordion-item"
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">DisciplinaryAction</button>
+                    <div
+                        style="display:none; padding: 10px; border: 1px solid #6fb6f1; margin-bottom: 5px; font-size: 12px;">
+                        No disciplinary actions recorded.</div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-action">Print</button>
+                    <button class="btn-action">Export</button>
+                </div>
+            </main>
+        </div>
+
+        <footer class="main-footer" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div
+                    style="background: #0274d8; color: white; padding: 2px 5px; font-weight: bold; border-radius: 3px; font-size: 14px;">
+                    WS</div>
+                <div>Copyright © All rights reserved</div>
+            </div>
+            <div>Powered by Webpros Solutions Pvt. Ltd., Visakhapatnam</div>
+        </footer>
+    </div>
+
+    <!-- Integrate the existing app.js for rendering the other static sections -->
+    <script src="../static/js/app.js"></script>
+
+    {% if display.full_access %}
+    <script>
+        // Simple timer for the step-up session
+        function startTimer() {
+            fetch("{{ url_for('session_status') }}")
+                .then(response => response.json())
+                .then(data => {
+                    const timerElem = document.getElementById('session-timer');
+                    if (data.full_access && data.remaining_seconds > 0) {
+                        let sec = data.remaining_seconds;
+                        setInterval(() => {
+                            sec--;
+                            if (sec <= 0) {
+                                window.location.reload(); // Reload to re-mask
+                            }
+                            let m = Math.floor(sec / 60);
+                            let s = sec % 60;
+                            timerElem.innerText = `Secure Session: ${m}:${s.toString().padStart(2, '0')}`;
+                        }, 1000);
+                    } else {
+                        window.location.reload();
+                    }
+                });
+        }
+        startTimer();
+    </script>
+    {% endif %}
+</body>
+
+</html>

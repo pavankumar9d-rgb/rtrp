@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security | Choose OTP Method</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <style>
+        .method-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 200px);
+            padding: 40px 20px;
+        }
+        .method-card {
+            background: #ffffff;
+            border: 2px solid #6fb6f1;
+            border-radius: 8px;
+            width: 450px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .method-option {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .method-option:hover {
+            border-color: #0274d8;
+            background: #f8fbff;
+        }
+        .method-option input[type="radio"] {
+            margin-top: 5px;
+        }
+        .method-label {
+            display: flex;
+            flex-direction: column;
+        }
+        .method-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .method-detail {
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <header class="main-header" style="height: 100px; background: transparent;">
+            <!-- Blank banner as requested -->
+        </header>
+
+        <div class="method-container">
+            <div class="method-card">
+                <h3 style="color:#0033cc; margin-top:0; text-align: center;">Choose Verification Method</h3>
+                <p style="font-size:14px; color:#666; margin-bottom:25px; text-align: center;">
+                    Select how you would like to receive your security code.
+                </p>
+
+                <form method="POST" action="{{ url_for('process_otp_choice') }}">
+                    <!-- Email Option -->
+                    <label class="method-option">
+                        <input type="radio" name="method" value="email" checked onclick="document.getElementById('phone_options').style.display='none'">
+                        <div class="method-label">
+                            <span class="method-name">Email Address</span>
+                            <span class="method-detail">Send to registered email: {{ masked_email }}</span>
+                        </div>
+                    </label>
+
+                    <!-- SMS Option -->
+                    <label class="method-option">
+                        <input type="radio" name="method" value="sms" onclick="document.getElementById('phone_options').style.display='block'">
+                        <div class="method-label">
+                            <span class="method-name">Text Message (SMS)</span>
+                            <span class="method-detail">Send to one of your registered mobile numbers</span>
+                        </div>
+                    </label>
+
+                    <!-- Phone Number Specific Selection -->
+                    <div id="phone_options" style="display: none; margin-left: 30px; margin-bottom: 20px;">
+                        <p style="font-size: 12px; font-weight: bold; color: #444; margin-bottom: 10px;">Select Phone Number:</p>
+                        {% if phones %}
+                            {% for label, masked, original in phones %}
+                            <div style="margin-bottom: 8px; font-size: 13px;">
+                                <input type="radio" name="target_phone" value="{{ original }}" id="phone_{{ loop.index }}" {% if loop.first %}checked{% endif %}>
+                                <label for="phone_{{ loop.index }}">{{ label }}: {{ masked }}</label>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="font-size: 12px; color: red;">No phone numbers found.</p>
+                        {% endif %}
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button type="submit" class="btn-action" style="width: 200px; padding: 12px;">Send Code</button>
+                    </div>
+                </form>
+
+                <div style="margin-top:20px; font-size:13px; text-align: center;">
+                    <a href="{{ url_for('login') }}" style="color:#666;">Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VBIT | Two-Step Verification</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <style>
+        .otp-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 200px);
+            padding: 40px 20px;
+        }
+        .otp-card {
+            background: #ffffff;
+            border: 2px solid #6fb6f1;
+            border-radius: 8px;
+            width: 400px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .alert-error {
+            background: #ffe6e6;
+            color: #cc0000;
+            padding: 10px;
+            border: 1px solid #cc0000;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        /* Demo toast */
+        .toast-simulate {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            font-size: 14px;
+            z-index: 1000;
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .demo-otp-code {
+            display: block;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-top: 5px;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <header class="main-header" style="height: 100px; background: transparent;">
+            <!-- Blank banner for VBIT Header -->
+        </header>
+
+        {% if otp_demo %}
+        <!-- Simulating an Email receipt for demo purposes -->
+        <div class="toast-simulate">
+            <strong>Demo Email Received</strong><br>
+            Sent to: Registered Address<br>
+            Your ECAP verification code is:
+            <span class="demo-otp-code">{{ otp_demo }}</span>
+        </div>
+        {% endif %}
+
+        <div class="otp-container">
+            <div class="otp-card">
+                <h3 style="color:#0033cc; margin-top:0;">Two-Step Verification</h3>
+                <p style="font-size:14px; color:#666; margin-bottom:20px;">
+                    We have sent a verification code to your registered email.
+                </p>
+                
+                {% if error %}
+                <div class="alert-error">{{ error }}</div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('verify_otp') }}">
+                    <div style="margin-bottom: 20px;">
+                        <input type="text" name="otp" placeholder="Enter Code" required
+                               style="font-size:18px; letter-spacing:5px; text-align:center; padding:10px; width:200px; border:2px solid #6fb6f1; border-radius:4px;">
+                    </div>
+                    <div>
+                        <button type="submit" class="btn-action" style="width:200px; padding:10px;">Verify & Login</button>
+                    </div>
+                </form>
+
+                <div style="margin-top:20px; font-size:13px;">
+                    Didn't receive code? <a href="{{ url_for('resend_otp') }}" style="color:#0274d8;">Resend OTP</a>
+                </div>
+            </div>
+        </div>
+
+        <footer class="main-footer" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="background: #0274d8; color: white; padding: 2px 5px; font-weight: bold; border-radius: 3px; font-size: 14px;">WS</div>
+                <div>Copyright &copy; All rights reserved</div>
+            </div>
+            <div>Powered by Webpros Solutions Pvt. Ltd., Visakhapatnam</div>
+        </footer>
+    </div>
+</body>
+</html>

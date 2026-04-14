@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECAP Student Portal</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+</head>
+
+<body>
+    <div class="page-container">
+        <header class="main-header" style="height: 100px; background: transparent;">
+            <!-- Blank banner for VBIT Header -->
+        </header>
+
+        <div class="login-container">
+            <!-- Admin Login Card -->
+            <div class="login-card">
+                <div class="login-card-header">Admin Login</div>
+                <div class="login-card-body">
+                    <form method="POST" action="{{ url_for('login') }}" id="adminLoginForm">
+                        <input type="hidden" name="role" value="admin">
+                        <div class="form-group">
+                            <label for="adminUser">User Name :</label>
+                            <input type="text" id="adminUser" name="username" required autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="adminPass">Password :</label>
+                            <input type="password" id="adminPass" name="password" required>
+                        </div>
+                        <div class="login-btn-container">
+                            <button type="submit" id="adminLoginBtn" class="login-btn">LOGIN</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Student Login Card -->
+            <div class="login-card">
+                <div class="login-card-header">Student Login</div>
+                <div class="login-card-body">
+                    {% if error %}
+                    <div class="alert-error">{{ error }}</div>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+                        <input type="hidden" name="role" value="student">
+                        <div class="form-group">
+                            <label for="stdUser">User Name :</label>
+                            <input type="text" id="stdUser" name="username" required autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="stdPass">Password :</label>
+                            <input type="password" id="stdPass" name="password" required>
+                        </div>
+                        <div class="login-btn-container">
+                            <button type="submit" id="studentLoginBtn" class="login-btn">LOGIN</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <footer class="main-footer" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div
+                    style="background: #0274d8; color: white; padding: 2px 5px; font-weight: bold; border-radius: 3px; font-size: 14px;">
+                    WS</div>
+                <div>Copyright &copy; All rights reserved</div>
+            </div>
+            <div>Powered by our team</div>
+        </footer>
+    </div>
+</body>
+
+</html>
