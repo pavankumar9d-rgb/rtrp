@@ -74,6 +74,8 @@ def excessive_view_full(username, window_minutes=5, threshold=3):
 
 def multiple_accounts_from_ip(ip, window_minutes=10):
     """Check if multiple accounts are using the same IP"""
+    if ip in ('127.0.0.1', 'localhost'):
+        return False
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=window_minutes)
     recent_logs = AuditLog.query.filter(
         AuditLog.ip_address == ip,
