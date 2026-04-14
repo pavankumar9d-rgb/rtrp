@@ -21,6 +21,7 @@ class Config:
     OTP_EXPIRY_SECONDS = 120  # OTP valid for 2 minutes
     MAX_LOGIN_ATTEMPTS = 5
     STEP_UP_EXPIRY_SECONDS = 120  # Step-up access expires in 2 minutes
+    RISK_THRESHOLD = 50  # Total risk allowed before locking account
 
     # --- Email / SMTP Settings ---
     # Use a Gmail account with an App Password (NOT your real Gmail password).

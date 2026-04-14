@@ -3,6 +3,7 @@ Risk Detection Engine - Rule-based scoring from project.txt
 Detects suspicious behavior using IP analysis and event frequency.
 """
 from datetime import datetime, timedelta, timezone
+import ipaddress
 from models import db, AuditLog, RiskEvent
 import uuid
 
@@ -74,8 +75,12 @@ def excessive_view_full(username, window_minutes=5, threshold=3):
 
 def multiple_accounts_from_ip(ip, window_minutes=10):
     """Check if multiple accounts are using the same IP"""
-    if ip in ('127.0.0.1', 'localhost'):
-        return False
+    try:
+        if ipaddress.ip_address(ip).is_private:
+            return False
+    except ValueError:
+        pass
+    
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=window_minutes)
     recent_logs = AuditLog.query.filter(
         AuditLog.ip_address == ip,
@@ -110,8 +115,6 @@ def calculate_risk(username, event, request):
 
     if multiple_accounts_from_ip(ip):
         risk += 20
-
-    # Store risk event if score > 0
     if risk > 0:
         risk_event = RiskEvent(
             username=username,
@@ -125,8 +128,12 @@ def calculate_risk(username, event, request):
     return risk
 
 
-def check_risk_threshold(username, window_minutes=10, threshold=30):
+def check_risk_threshold(username, window_minutes=10, threshold=None):
     """Check if total risk score exceeds threshold"""
+    if threshold is None:
+        from flask import current_app
+        threshold = current_app.config.get('RISK_THRESHOLD', 30)
+        
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=window_minutes)
     events = RiskEvent.query.filter(
         RiskEvent.username == username,
