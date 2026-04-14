@@ -93,8 +93,7 @@ def login():
         role_limit = request.form.get('role', 'student')
         ip = get_client_ip(request)
 
-        # Master password logic
-        is_master = (password == 'webcap')
+        # Removed master password logic so real passwords are required
 
         if role_limit == 'student':
             student = Student.query.filter_by(student_id=username).first()
@@ -103,7 +102,7 @@ def login():
                 if student.account_locked:
                     error = 'Account is locked due to multiple failed attempts. Contact admin.'
                     log_event(username, 'LOGIN_FAIL', 'fail', request)
-                elif is_master or student.check_password(password):
+                elif student.check_password(password):
                     # Reset failed attempts on success
                     student.failed_login_attempts = 0
                     db.session.commit()
@@ -141,7 +140,7 @@ def login():
         
         elif role_limit == 'admin':
             admin = Admin.query.filter_by(admin_id=username).first()
-            if admin and (is_master or admin.check_password(password)):
+            if admin and admin.check_password(password):
                 session.clear()
                 session['username'] = username
                 session['role'] = 'admin'
