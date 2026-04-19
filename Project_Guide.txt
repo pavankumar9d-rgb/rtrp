@@ -1,0 +1,28 @@
+# Project File Structure and Descriptions
+
+## Backend Files (pro/)
+- app.py         -> Main application logic and routing (The "Heart" of the project).
+- config.py      -> Configuration settings for Database, Mail, and Security.
+- models.py      -> Database structure/models for Users, Sessions, and Logs.
+- risk_engine.py -> Core logic for calculating login risk and security levels.
+- services.py    -> Shared services for Email OTP delivery and external integrations.
+- update_db.py   -> Script to initialize the database and add sample user data.
+- test_app.py    -> Automated tests to ensure everything is working correctly.
+- .env           -> Secret keys and sensitive credentials (Keep private!).
+
+## UI Templates (pro/templates/)
+- login.html           -> The main entry point for users to log in.
+- admin.html           -> Admin dashboard to manage users and view security logs.
+- dashboard.html       -> The personalized student/user landing page after login.
+- verify_otp.html      -> Page where users enter the code sent to their email/phone.
+- choose_delivery.html -> UI for selecting how you want to receive your OTP.
+- change_password.html -> Security page for users to update their passwords.
+- step_up.html         -> Extra security page for high-risk login attempts.
+
+## Static Assets (pro/static/)
+- css/   -> Style sheets that make the website look professional and premium.
+- js/    -> Scripts for interactive elements and form validations.
+- assets/ -> Icons, logos, and images used across the application.
+
+## Miscellaneous
+- instance/ -> Contains the local SQLite database file (app.db).

@@ -17,10 +17,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_TYPE = 'filesystem'
     SESSION_PERMANENT = False
-    PERMANENT_SESSION_LIFETIME = 1800  # 30 minutes
-    OTP_EXPIRY_SECONDS = 120  # OTP valid for 2 minutes
+    PERMANENT_SESSION_LIFETIME = 180  # 3 minutes
+    OTP_EXPIRY_SECONDS = 180  # 3 minutes
     MAX_LOGIN_ATTEMPTS = 5
-    STEP_UP_EXPIRY_SECONDS = 120  # Step-up access expires in 2 minutes
+    STEP_UP_EXPIRY_SECONDS = 180  # 3 minutes
     RISK_THRESHOLD = 50  # Total risk allowed before locking account
 
     # --- Email / SMTP Settings ---
@@ -31,4 +31,4 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'your_gmail@gmail.com')  # <-- change this
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'your_app_password_here') # <-- change this
-    MAIL_SENDER_NAME = 'VBIT ECAP System'
+    MAIL_SENDER_NAME = 'ECAP Secure System'

@@ -9,6 +9,22 @@ if hasattr(sys.stdout, 'reconfigure'):
 print("Starting FAST database update for specific users...")
 app = create_app()
 with app.app_context():
+    from models import Admin
+    
+    print("Resetting all students to 'webcap'...")
+    all_students = Student.query.all()
+    for s in all_students:
+        s.set_password('webcap')
+        s.failed_login_attempts = 0
+        s.account_locked = False
+        
+    print("Resetting all admins to 'webcap'...")
+    all_admins = Admin.query.all()
+    for a in all_admins:
+        a.set_password('webcap')
+    
+    db.session.commit()
+    
     # Update user 24p61a6235
     s0 = Student.query.filter_by(student_id='24p61a6235').first()
     if s0:
@@ -72,6 +88,32 @@ with app.app_context():
     s2.mother_mobile = '9012345678'
     s2.annual_income = '450000'
     s2.entrance_rank = '15200'
+
+    # Add user 24p61a6221 - KARTHIK
+    s3 = Student.query.filter_by(student_id='24p61a6221').first()
+    if not s3:
+        s3 = Student(student_id='24p61a6221')
+        db.session.add(s3)
+    s3.name = 'KARTHIK'
+    s3.set_password('webcap')
+    s3.email = '24p61a6221@vbithyd.ac.in'
+    s3.phone = '9123456721'
+    s3.aadhaar = '1122 3344 5566'
+    s3.branch = 'CYBER SECURITY'
+    s3.dob = '10/05/2006'
+
+    # Add user 24p61a6255 - SHYAM
+    s4 = Student.query.filter_by(student_id='24p61a6255').first()
+    if not s4:
+        s4 = Student(student_id='24p61a6255')
+        db.session.add(s4)
+    s4.name = 'SHYAM'
+    s4.set_password('webcap')
+    s4.email = '24p61a6255@vbithyd.ac.in'
+    s4.phone = '9123456755'
+    s4.aadhaar = '6655 4433 2211'
+    s4.branch = 'CYBER SECURITY'
+    s4.dob = '15/08/2006'
 
     db.session.commit()
     print("Database successfully synchronized with diverse mock data for specific users!")

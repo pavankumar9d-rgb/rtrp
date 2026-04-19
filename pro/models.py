@@ -102,6 +102,16 @@ class RiskEvent(db.Model):
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class PersistentOTP(db.Model):
+    """Stores OTP codes in DB to handle server restarts during testing"""
+    __tablename__ = 'persistent_otps'
+
+    id = db.Column(db.Integer, primary_key=True)
+    target_id = db.Column(db.String(100), unique=True, nullable=False) # e.g. 'user_a' or 'stepup_user_a'
+    code = db.Column(db.String(6), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+
+
 def init_db(app):
     """Initialize database and seed default student user + 200 mock users"""
     with app.app_context():

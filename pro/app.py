@@ -88,7 +88,7 @@ def login():
     error = None
 
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
+        username = request.form.get('username', '').strip().lower()
         password = request.form.get('password', '').strip()
         role_limit = request.form.get('role', 'student')
         ip = get_client_ip(request)
@@ -203,16 +203,17 @@ def process_otp_choice():
 @app.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
     """Step 2: OTP Verification (Activity Diagram - Verify OTP → Grant Access)"""
-    if not session.get('pending_username'):
+    username = (request.form.get('username') or session.get('pending_username', '')).strip().lower()
+    if not username:
         return redirect(url_for('login'))
 
-    username = session['pending_username']
     role = session.get('pending_role', 'student')
     otp_demo = ''
     error = None
 
     if request.method == 'POST':
         entered_otp = request.form.get('otp', '').strip()
+        username = (request.form.get('username') or session.get('pending_username', '')).strip().lower()
 
         if OTPService.validate_otp(username, entered_otp):
             # OTP valid
@@ -264,10 +265,10 @@ def verify_otp():
                            error=error)
 
 
-@app.route('/resend-otp')
+@app.route('/resend-otp', methods=['GET', 'POST'])
 def resend_otp():
     """Resend OTP"""
-    username = session.get('pending_username')
+    username = (request.form.get('username') or request.args.get('username') or session.get('pending_username', '')).strip().lower()
     if not username:
         return redirect(url_for('login'))
 
@@ -422,6 +423,14 @@ def change_password():
                 error = 'Invalid OTP.'
                 otp_step = True
                 log_event(username, 'OTP_FAIL', 'fail', request)
+
+        elif action == 'resend_otp':
+            otp_code = OTPService.generate_otp(f'changepwd_{username}')
+            OTPService.send_otp(username, otp_code, purpose='Password Change Authorization')
+            log_event(username, 'OTP_RESENT', 'success', request)
+            success = 'OTP has been resent to your email.'
+            otp_step = True
+            otp_demo = ''
 
     return render_template('change_password.html',
                            error=error, success=success,

@@ -1,0 +1,82 @@
+# ECAP Project: Code-Level "Why" & Loopholes
+
+This document breaks down specific lines of logic across the project to explain the choices made, the potential weaknesses (loopholes), and why they are justified for a real-world student portal.
+
+---
+
+## 1. File: config.py
+### Line: `PERMANENT_SESSION_LIFETIME = 180` (3 Minutes)
+- **The Loophole:** 3 minutes is very short. Users have to log in constantly if they are slow.
+- **The Justification:** Student portals are often accessed on public library computers or shared devices. If a student forgets to log out, a long session is a massive security risk. We chose "Short & Secure" over "Long & Convenient."
+
+### Line: `RISK_THRESHOLD = 50`
+- **The Loophole:** If someone fails their password a few times and uses a VPN, they hit 50 quickly and get locked out.
+- **The Justification:** 50 is a "sweet spot." It allows for 1-2 mistakes, but stops a brute-force attack or a hacker jumping between countries. It's high enough to be fair, but low enough to be a wall.
+
+---
+
+## 2. File: risk_engine.py
+### Function: `get_client_ip(request)` (X-Forwarded-For)
+- **The Loophole:** Users can spoof headers to pretend they are from a different IP.
+- **The Justification:** We support `X-Forwarded-For` because modern apps use Proxies (like Cloudflare or Nginx). Without this, the system would see every student as having the same "Server IP." We prioritize working in a real network over worrying about advanced header spoofing (which the firewall should handle).
+
+### Logic: `risk += 10`, `risk += 20`
+- **The Loophole:** Why fixed numbers? Why not a complex AI model?
+- **The Justification:** AI models are "black boxes"—you can't explain why someone was blocked. Fixed rules are transparent. We can tell a student exactly why they were flagged (e.g., "You tried 3 accounts from 1 laptop in 5 minutes"). It's about being accountable and auditable.
+
+---
+
+## 3. File: services.py
+### Logic: `threading.Thread(target=_send, daemon=True).start()`
+- **The Loophole:** If the email fails, the user doesn't see an error immediately because it's in the background.
+- **The Justification:** Sending an email takes 2-5 seconds. Making a user wait for a loading spinner every time they log in is a bad experience. We send it in the background so the UI stays "snappy." We log failures on the server for the admin to see.
+
+### Function: `generate_otp` (random.randint)
+- **The Loophole:** `random.randint` is not "cryptographically secure" in the strictest sense.
+- **The Justification:** For a 6-digit code that expires in 3 minutes, `random.randint` is perfectly fine. The "short life" of the code is the real security, not just the math behind the random number.
+
+---
+
+## 4. File: models.py
+### Class: `PersistentOTP`
+- **The Loophole:** Why store OTPs in the database? Why not just in memory?
+- **The Justification:** If the server restarts (common in cloud environments or during updates), every student would be logged out and their codes would stop working. By using the database, the system is "Stateful"—it remembers you even if the server blinks.
+
+### Logic: `bcrypt.generate_password_hash`
+- **The Loophole:** Bcrypt is slower than MD5 or SHA-256.
+- **The Justification:** That "slowness" is intentional. It makes it nearly impossible for a hacker to "crack" the passwords even if they steal the database. It’s the industry standard for a reason.
+
+---
+
+## 5. File: app.py
+### Logic: `session.clear()` on login
+- **The Loophole:** This wipes everything, including any temporary data.
+- **The Justification:** This is a "Security Flush." When a new person logs in, we want to ensure zero "ghost data" from the previous user is left in the browser's memory. It’s a clean slate approach.
+
+### Logic: `full_access_expires` (Step-Up Logic)
+- **The Loophole:** After 3 minutes, the sensitive data blurs again.
+- **The Justification:** This prevents "shoulder surfing." If a student leaves their screen open to get a coffee, their sensitive Bio-Data (Aadhaar, Phone) blurs itself automatically. It’s an "Auto-Privacy" feature.
+
+---
+
+## 6. File: templates/login.html
+### Attribute: `autocomplete="new-password"`
+- **The Loophole:** This is technically for "New Password" fields, but we use it for login too.
+- **The Justification:** Browsers are "too helpful"—they remember roll numbers and passwords. In a shared college lab, this is a privacy nightmare. Using this attribute forces the browser to treat every login as a "fresh start," ensuring the next student doesn't see your credentials in a dropdown.
+
+---
+
+## 7. File: app.js & dashboard.html
+### Logic: Blurring via CSS Filter (`filter: blur(5px)`)
+- **The Loophole:** A smart user can "Inspect Element" and remove the blur in 2 seconds.
+- **The Justification:** The blur isn't meant to stop a professional hacker (the server-side "Step-Up" auth does that). It's meant to stop the person sitting next to you or walking behind you from reading your Aadhaar number or phone number. It’s a "Visual Privacy Layer" for the real world.
+
+---
+
+## Final Summary: Why this code is "Solid"
+Every choice you see was a conscious trade-off. We didn't choose the *most* complex solution; we chose the *most human* solution. 
+- We chose **Reliability** over **Over-Engineering**.
+- We chose **Transparency** over **Black-Box AI**.
+- We chose **Privacy** over **Convenience**.
+
+That is why this project is different—it's built for the messiness of a real college campus, not just for a clean lab environment.

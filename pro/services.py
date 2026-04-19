@@ -18,8 +18,8 @@ class OTPService:
     Methods: generateOTP(), sendOTP(), validateOTP()
     """
 
-    # In-memory OTP store: { username: { 'code': '123456', 'expires': timestamp } }
-    _otp_store = {}
+    # Azure config – populated from app config at runtime
+    _azure_config = {}
 
     # Azure config – populated from app config at runtime
     _azure_config = {}
@@ -41,15 +41,35 @@ class OTPService:
         }
 
     @staticmethod
-    def generate_otp(username, expiry_seconds=120):
+    def generate_otp(username, expiry_seconds=300):
         """
-        generateOTP() - Generate a random 6-digit numerical OTP.
+        generateOTP() - Generate a random 6-digit numerical OTP and save to DB.
         """
+        from datetime import datetime, timedelta, timezone
+        from models import db, PersistentOTP
+        
         otp_code = str(random.randint(100000, 999999))
-        OTPService._otp_store[username] = {
-            'code': otp_code,
-            'expires': time.time() + expiry_seconds
-        }
+        expiry = datetime.now(timezone.utc) + timedelta(seconds=expiry_seconds)
+        
+        # Upsert the OTP in DB with concurrency handling
+        otp_record = PersistentOTP.query.filter_by(target_id=username).first()
+        if not otp_record:
+            otp_record = PersistentOTP(target_id=username)
+            db.session.add(otp_record)
+        
+        try:
+            otp_record.code = otp_code
+            otp_record.expires_at = expiry
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            # Handle race condition: if another thread inserted it simultaneously
+            otp_record = PersistentOTP.query.filter_by(target_id=username).first()
+            if otp_record:
+                otp_record.code = otp_code
+                otp_record.expires_at = expiry
+                db.session.commit()
+        
         return otp_code
 
     @staticmethod
@@ -77,6 +97,7 @@ class OTPService:
         cfg = OTPService._mail_config
         mail_user = cfg.get('username', '')
         mail_pass = cfg.get('password', '')
+        sender_display = "ECAP Admin Control"
 
         if not mail_user or not mail_pass or mail_pass == 'your_app_password_here':
             print(f"[SIMULATION] Email OTP [{otp_code}] -> {email} (Purpose: {purpose})")
@@ -84,12 +105,35 @@ class OTPService:
 
         # Build email
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = f'Your {purpose} Code'
-        msg['From']    = f"Security System <{mail_user}>"
+        msg['Subject'] = f'Official Alert: {purpose} Code'
+        msg['From']    = f"{sender_display} <{mail_user}>"
         msg['To']      = email
 
-        plain_body = f"Hello {username},\n\nYour {purpose} code is: {otp_code}\n\nValid for 2 minutes."
-        html_body = f"<html><body><h2>{purpose}</h2><p>Hello {username},</p><p>Your code is: <b>{otp_code}</b></p></body></html>"
+        plain_body = f"Hello {username},\n\nYour official security code for {purpose} is: {otp_code}\n\nValid for 3 minutes. Please do not share this with anyone."
+        
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                <div style="background: #0033cc; color: #fff; padding: 20px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px;">ECAP SECURITY ADMIN</h1>
+                </div>
+                <div style="padding: 30px;">
+                    <p>Hello <strong>{username}</strong>,</p>
+                    <p>A request was made for <strong>{purpose}</strong>. Please use the following official verification code to proceed:</p>
+                    <div style="background: #f4f4f4; padding: 20px; text-align: center; border-radius: 4px; margin: 20px 0;">
+                        <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #0033cc;">{otp_code}</span>
+                    </div>
+                    <p style="color: #666; font-size: 14px;">This code is valid for <strong>3 minutes</strong>. If you did not request this code, please ignore this email or contact the administrator immediately.</p>
+                </div>
+                <div style="background: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee;">
+                    <p>&copy; 2026 ECAP Secure Campus System | Official Administration Correspondence</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
         msg.attach(MIMEText(plain_body, 'plain'))
         msg.attach(MIMEText(html_body, 'html'))
 
@@ -115,7 +159,7 @@ class OTPService:
         conn_str = OTPService._azure_config.get('connection_string')
         sender = OTPService._azure_config.get('sender_phone')
 
-        message = f"Your {purpose} code is: {otp_code}. Valid for 2 minutes."
+        message = f"Your {purpose} code is: {otp_code}. Valid for 3 minutes."
 
         # If Azure is not configured, simulate it
         if not conn_str or not sender:
@@ -137,15 +181,35 @@ class OTPService:
 
     @staticmethod
     def validate_otp(username, entered_otp):
-        stored = OTPService._otp_store.get(username)
-        if not stored or time.time() > stored['expires']:
-            OTPService._otp_store.pop(username, None)
+        """
+        validateOTP() - Check if code is valid using persistent storage.
+        """
+        from datetime import datetime, timezone
+        from models import db, PersistentOTP
+        
+        otp_record = PersistentOTP.query.filter_by(target_id=username).first()
+        
+        if not otp_record:
             return False
-        if stored['code'] == entered_otp:
-            OTPService._otp_store.pop(username, None)
+            
+        if datetime.now(timezone.utc) > otp_record.expires_at.replace(tzinfo=timezone.utc):
+            db.session.delete(otp_record)
+            db.session.commit()
+            return False
+            
+        if otp_record.code == entered_otp:
+            # Success - burn the OTP
+            db.session.delete(otp_record)
+            db.session.commit()
             return True
+            
+        # Failed attempt - keep the OTP in store so user can try again if they mistyped
         return False
 
     @staticmethod
     def clear_otp(username):
-        OTPService._otp_store.pop(username, None)
+        from models import db, PersistentOTP
+        otp_record = PersistentOTP.query.filter_by(target_id=username).first()
+        if otp_record:
+            db.session.delete(otp_record)
+            db.session.commit()

@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# Sensitive Data
+.env
+pro/.env
+instance/
+pro/instance/
+*.db
+*.sqlite3
+
+# Project Backups/Docs
+*.zip
+*.docx
+*.pdf
+
+# IDEs
+.vscode/
+.idea/
+.project
+.pydevproject
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db

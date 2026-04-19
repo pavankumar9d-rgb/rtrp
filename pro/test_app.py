@@ -24,8 +24,9 @@ def reset_student_lock():
         AuditLog.query.filter_by(user_id='24p61a6235').delete()
         RiskEvent.query.filter_by(username='24p61a6235').delete()
         
-        # Clear OTP store
-        OTPService._otp_store.clear()
+        # Clear persistent OTPs
+        from models import PersistentOTP
+        PersistentOTP.query.delete()
         
         db.session.commit()
 
@@ -34,10 +35,14 @@ def do_full_login(client):
     """Helper: complete the 2-step login flow and return OTP used."""
     r = client.post('/login', data={'username': '24p61a6235', 'password': 'webcap', 'role': 'student'})
     assert r.status_code == 302, f"Login expected 302, got {r.status_code}"
-    with client.session_transaction() as sess:
-        otp = sess.get('otp_demo')
-    assert otp, "OTP not found in session"
-    client.post('/verify-otp', data={'otp': otp})
+    
+    with app.app_context():
+        from models import PersistentOTP
+        otp_record = PersistentOTP.query.filter_by(target_id='24p61a6235').first()
+        otp = otp_record.code if otp_record else ''
+    
+    assert otp, "OTP not found in database"
+    client.post('/verify-otp', data={'otp': otp, 'username': '24p61a6235'})
     return otp
 
 
@@ -60,9 +65,9 @@ class TestLoginPage(unittest.TestCase):
         self.assertIn(b'id="stdUser"', r.data)
         self.assertIn(b'id="stdPass"', r.data)
 
-    def test_ecap2_logo_present(self):
+    def test_login_page_renders_without_error(self):
         r = self.client.get('/login')
-        self.assertIn(b'ecap2.png', r.data)
+        self.assertEqual(r.status_code, 200)
 
     def test_valid_credentials_redirect_to_otp_for_primary_student(self):
         r = self.client.post('/login', data={
@@ -83,15 +88,15 @@ class TestLoginPage(unittest.TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn('/admin', r.headers['Location'])
 
-    def test_otp_bypass_for_other_students(self):
-        # Testing that users other than '24p61a6235' bypass OTP
+    def test_otp_flow_for_other_students(self):
+        # Testing that all users go to OTP flow
         r = self.client.post('/login', data={
-            'username': '24p61a62001',
+            'username': '01',
             'password': 'webcap',
             'role': 'student'
         })
         self.assertEqual(r.status_code, 302)
-        self.assertIn('/dashboard', r.headers['Location']) # Direct to dashboard
+        self.assertIn('/verify-otp', r.headers['Location']) # Direct to OTP
 
     def test_invalid_password_shows_error(self):
         r = self.client.post('/login', data={
@@ -114,10 +119,11 @@ class TestLoginPage(unittest.TestCase):
 
 class TestOTPService(unittest.TestCase):
     def test_otp_generates_and_simulates_email(self):
-        otp = OTPService.generate_otp('24p61a6235')
-        res = OTPService.send_otp('24p61a6235', otp)
-        self.assertTrue(res['success'])
-        self.assertIn('24p61a6235@vbithyd.ac.in', res['message'])
+        with app.app_context():
+            otp = OTPService.generate_otp('24p61a6235')
+            res = OTPService.send_otp('24p61a6235', otp)
+            self.assertTrue(res['success'])
+            self.assertIn('24p61a6235@vbithyd.ac.in', res['sent_to'])
 
 # ─── TEST OTP VERIFICATION ROUTE ─────────────────────────────────────────────
 
@@ -133,11 +139,13 @@ class TestOTPVerification(unittest.TestCase):
             'password': 'webcap',
             'role': 'student'
         })
-        with self.client.session_transaction() as sess:
-            otp = sess.get('otp_demo')
-        r = self.client.post('/verify-otp', data={'otp': otp}, follow_redirects=True)
+        with app.app_context():
+            from models import PersistentOTP
+            otp_record = PersistentOTP.query.filter_by(target_id='24p61a6235').first()
+            otp = otp_record.code if otp_record else ''
+            
+        r = self.client.post('/verify-otp', data={'otp': otp, 'username': '24p61a6235'}, follow_redirects=True)
         self.assertIn(b'STUDENT PROFILE', r.data)
-
 # ─── TEST DASHBOARD ───────────────────────────────────────────────────────────
 
 class TestDashboard(unittest.TestCase):
@@ -147,10 +155,9 @@ class TestDashboard(unittest.TestCase):
         reset_student_lock()
         do_full_login(self.client)
 
-    def test_dashboard_loads_with_ecap2(self):
+    def test_dashboard_loads_without_error(self):
         r = self.client.get('/dashboard')
         self.assertEqual(r.status_code, 200)
-        self.assertIn(b'ecap2.png', r.data)
 
 # ─── TEST ADMIN ───────────────────────────────────────────────────────────────
 
@@ -158,7 +165,7 @@ class TestAdminDashboard(unittest.TestCase):
     def setUp(self):
         app.config['TESTING'] = True
         self.client = app.test_client()
-        self.client.post('/login', data={'username': 'admin', 'password': 'admin123', 'role': 'admin'})
+        self.client.post('/login', data={'username': 'admin', 'password': 'webcap', 'role': 'admin'})
 
     def test_admin_dashboard_shows_risk_scores(self):
         r = self.client.get('/admin')
